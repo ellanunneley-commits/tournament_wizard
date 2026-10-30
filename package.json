@@ -1,0 +1,13 @@
+{
+  "name": "tournament-wizard",
+  "type": "module",
+  "dependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-router-dom": "7.18.2",
+    "@tanstack/react-query": "5.102.3",
+    "hono": "4.12.30",
+    "@neondatabase/serverless": "1.1.0",
+    "qrcode.react": "4.2.0"
+  }
+}

@@ -2,14 +2,16 @@ import React from "react";
 import { ClerkProvider, useAuth, useClerk, useUser } from "@clerk/clerk-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { setAuthHeaders } from "./http";
+import { CLERK_PUBLISHABLE_KEY } from "../config";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/Dialog";
 import { Button } from "../components/Button";
 import { Input } from "../components/Input";
 import { Label } from "../components/Label";
 
-// Sign-in. With a Clerk key (VITE_CLERK_PUBLISHABLE_KEY), people sign in with their email and a one-time code.
-// Without one, a simple test sign-in is used so the app can be tried out locally.
-const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
+// Sign-in. The online app uses Clerk: people sign in with their email and a one-time code.
+// When running on your own computer (npm run dev) a simple test sign-in is used instead,
+// unless VITE_CLERK_PUBLISHABLE_KEY is set in .env to try Clerk locally.
+const CLERK_KEY = (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined) || (import.meta.env.PROD ? CLERK_PUBLISHABLE_KEY : undefined);
 
 type Session = { ready: boolean; email: string | null; signIn: () => void; signOut: () => void };
 const SessionContext = React.createContext<Session>({ ready: false, email: null, signIn: () => {}, signOut: () => {} });

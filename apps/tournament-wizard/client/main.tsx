@@ -12,6 +12,11 @@ const queryClient = new QueryClient({
 	},
 });
 
+// The service worker makes the app installable and lets it open without a signal. Only in the real (built) app.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+	window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
+
 createRoot(document.getElementById("root")!).render(
 	<React.StrictMode>
 		<QueryClientProvider client={queryClient}>

@@ -35,6 +35,24 @@ const columns: ColumnDef<TeamRow, unknown>[] = [
 	},
 ];
 
+// One team on a phone: pool rank, name, record and bracket seed on a single line.
+function TeamLine({ t, top }: { t: TeamRow; top: number }) {
+	return (
+		<div className="flex items-center gap-3">
+			<span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-subtle text-sm font-bold">{t.pool_rank}</span>
+			<div className="min-w-0 flex-1">
+				<p className="truncate font-semibold">
+					{t.name} <span className="font-normal text-secondary">({t.code})</span>
+				</p>
+				<p className="text-xs text-secondary">
+					{t.wins}–{t.losses} · sets {t.sets_won}–{t.sets_lost} · pts {t.pts_for}–{t.pts_against}
+				</p>
+			</div>
+			<Badge tone={t.seed <= top ? "success" : undefined}>Seed {t.seed}</Badge>
+		</div>
+	);
+}
+
 export default function Standings() {
 	const tour = useT();
 	const { data: teams = [], isLoading } = useQuery<TeamRow[]>({
@@ -65,6 +83,7 @@ export default function Standings() {
 						columns={columns}
 						data={teams.filter((t) => t.pool === pool).sort((a, b) => a.pool_rank - b.pool_rank)}
 						getRowHref={(t: TeamRow) => tour.to(`/teams/${t.id}`)}
+						mobileCard={(t: TeamRow) => <TeamLine t={t} top={teams.length / 2} />}
 						isLoading={isLoading}
 						emptyState={<EmptyState title="No teams in this pool" />}
 					/>

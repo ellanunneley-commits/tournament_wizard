@@ -37,13 +37,13 @@ function TournamentLayout() {
 	const { data: access } = useAccess();
 	const base = `/t/${tid}`;
 	const items = [
-		{ href: "/", label: "Tournaments", icon: <Trophy /> },
+		{ href: "/", label: "Tournaments", icon: <Trophy />, more: true },
 		...(access?.can_see
 			? [
 					{ href: base, label: "Standings", icon: <ListOrdered /> },
 					{ href: `${base}/live`, label: "Live", icon: <Radio /> },
 					{ href: `${base}/schedule`, label: "Schedule", icon: <CalendarDays /> },
-					{ href: `${base}/master`, label: "Master", icon: <Clock /> },
+					{ href: `${base}/master`, label: "Master", icon: <Clock />, more: true },
 					{ href: `${base}/bracket`, label: "Bracket", icon: <Network /> },
 					{ href: `${base}/teams`, label: "Teams", icon: <Users /> },
 				]

@@ -5,7 +5,8 @@ import { cn } from "../lib/cn";
 import { useSession } from "../lib/auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./Dialog";
 
-export type NavItem = { href: string; label: string; icon: React.ReactNode };
+// `more`: on a phone, keep this under "More" so the bottom tabs go to what players use most.
+export type NavItem = { href: string; label: string; icon: React.ReactNode; more?: boolean };
 
 const MAX_TABS = 4;
 
@@ -17,8 +18,9 @@ export function Nav({ items }: { items: NavItem[]; layout?: "top" }) {
 	React.useEffect(() => setMore(false), [location.pathname]);
 
 	const isActive = (href: string) => location.pathname === href || (href.split("/").length > 3 && location.pathname.startsWith(href + "/"));
-	const tabs = items.length > MAX_TABS + 1 ? items.slice(0, MAX_TABS) : items;
-	const extra = items.length > MAX_TABS + 1 ? items.slice(MAX_TABS) : [];
+	const crowded = items.length > MAX_TABS + 1;
+	const tabs = crowded ? items.filter((it) => !it.more).slice(0, MAX_TABS) : items;
+	const extra = crowded ? items.filter((it) => !tabs.includes(it)) : [];
 	const account = session.email ? (
 		<button type="button" onClick={session.signOut} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-secondary hover:bg-subtle hover:text-ink">
 			<LogOut className="size-4" /> <span className="hidden max-w-48 truncate sm:inline">Sign out {session.email}</span>

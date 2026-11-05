@@ -13,6 +13,7 @@ import { Label } from "../components/Label";
 import { toast } from "../components/Toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/Dialog";
 import { api } from "../lib/tournament";
+import { InstallPrompt } from "../components/InstallPrompt";
 import { get } from "../lib/http";
 
 export type TournamentRow = { id: string; name: string; created_at: string; teams: number; team_count: number; role: "organizer" | "captain" | "guest" | "owner" };
@@ -69,11 +70,26 @@ export default function Home() {
 	return (
 		<div className="space-y-6">
 			<PageHeader title="Tournaments" actions={newButton} />
+			<InstallPrompt />
 			<DataTable
 				columns={columns}
 				data={data?.tournaments ?? []}
 				isLoading={isLoading}
 				getRowHref={(t: TournamentRow) => `/t/${t.id}`}
+				mobileCard={(t: TournamentRow) => (
+					<div className="flex items-center gap-3">
+						<span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-subtle text-primary">
+							<Trophy className="size-5" />
+						</span>
+						<div className="min-w-0 flex-1">
+							<p className="truncate font-semibold">{t.name}</p>
+							<p className="text-xs text-secondary">
+								{t.teams} of {t.team_count} teams
+							</p>
+						</div>
+						<Badge tone={ROLE[t.role].tone}>{ROLE[t.role].label}</Badge>
+					</div>
+				)}
 				emptyState={
 					<EmptyState
 						icon={<Trophy />}

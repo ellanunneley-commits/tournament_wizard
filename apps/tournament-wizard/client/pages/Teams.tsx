@@ -71,6 +71,18 @@ export default function Teams() {
 				data={shown}
 				isLoading={isLoading}
 				getRowHref={(t: TeamRow) => tour.to(`/teams/${t.id}`)}
+				mobileCard={(t: TeamRow) => (
+					<div className="flex items-center gap-3">
+						<span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-subtle text-sm font-bold">{t.code}</span>
+						<div className="min-w-0 flex-1">
+							<p className="truncate font-semibold">{t.name}</p>
+							<p className="text-xs text-secondary">
+								Pool {t.pool} · {t.wins}–{t.losses} · rank {t.pool_rank}
+							</p>
+						</div>
+						<Badge>Seed {t.seed}</Badge>
+					</div>
+				)}
 				emptyState={<EmptyState title="No teams found" description="Try a different search." />}
 			/>
 		</div>

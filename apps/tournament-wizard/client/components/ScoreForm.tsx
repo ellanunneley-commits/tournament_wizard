@@ -4,7 +4,7 @@ import { Button } from "./Button";
 import { Input } from "./Input";
 import { Label } from "./Label";
 import { toast } from "./Toast";
-import { api, MatchRow } from "../lib/tournament";
+import { api, ApiError, MatchRow } from "../lib/tournament";
 import { useT } from "../lib/useT";
 
 const toText = (v: number | null) => (v == null ? "" : String(v));
@@ -18,6 +18,7 @@ export function ScoreForm({ match, onSaved }: { match: MatchRow; onSaved?: () =>
 	const [aPts, setAPts] = React.useState(toText(match.a_pts));
 	const [bPts, setBPts] = React.useState(toText(match.b_pts));
 	const [saving, setSaving] = React.useState(false);
+	const [warning, setWarning] = React.useState<{ message: string; clear: boolean } | null>(null);
 
 	React.useEffect(() => {
 		setCourt(match.court ?? "");
@@ -31,8 +32,9 @@ export function ScoreForm({ match, onSaved }: { match: MatchRow; onSaved?: () =>
 	const aName = match.team_a_name ?? "Team A";
 	const bName = match.team_b_name ?? "Team B";
 
-	async function save(clear: boolean) {
+	async function save(clear: boolean, force = false) {
 		setSaving(true);
+		setWarning(null);
 		try {
 			await api(`/app-api/t/${tid}/matches/${match.id}`, "PATCH", {
 				court,
@@ -40,6 +42,7 @@ export function ScoreForm({ match, onSaved }: { match: MatchRow; onSaved?: () =>
 				b_sets: clear ? null : bSets,
 				a_pts: clear ? null : aPts,
 				b_pts: clear ? null : bPts,
+				force,
 			});
 			if (clear) {
 				setASets("");
@@ -51,7 +54,9 @@ export function ScoreForm({ match, onSaved }: { match: MatchRow; onSaved?: () =>
 			toast.success(clear ? "Score cleared" : "Saved");
 			onSaved?.();
 		} catch (e) {
-			toast.error(e instanceof Error ? e.message : "Could not save");
+			// A later bracket match was already played: show what would be cleared and let the organizer decide.
+			if (e instanceof ApiError && e.data?.code === "clears_later") setWarning({ message: e.message, clear });
+			else toast.error(e instanceof Error ? e.message : "Could not save");
 		} finally {
 			setSaving(false);
 		}
@@ -81,6 +86,19 @@ export function ScoreForm({ match, onSaved }: { match: MatchRow; onSaved?: () =>
 				<Input aria-label={`${bName} points`} type="number" min={0} inputMode="numeric" disabled={!canScore} value={bPts} onChange={(e) => setBPts(e.target.value)} />
 			</div>
 			{!canScore && <p className="text-sm text-secondary">Scores can be entered once both teams are known.</p>}
+			{warning && (
+				<div role="alert" className="space-y-2 rounded-lg bg-warning-weak p-3 text-sm text-warning-ink">
+					<p className="font-medium">{warning.message}</p>
+					<div className="flex gap-2">
+						<Button type="button" size="sm" variant="primary" isLoading={saving} onClick={() => save(warning.clear, true)}>
+							Save anyway
+						</Button>
+						<Button type="button" size="sm" variant="tertiary" onClick={() => setWarning(null)}>
+							Cancel
+						</Button>
+					</div>
+				</div>
+			)}
 			<div className="flex justify-end gap-2">
 				{match.a_sets != null && (
 					<Button type="button" variant="tertiary" disabled={saving} onClick={() => save(true)}>

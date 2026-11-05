@@ -6,6 +6,9 @@ import { Env, Row, forbidden, ownerOnly } from "../lib/ctx";
 
 const P = "/app-api/t/:tid";
 
+// The tag put on a tournament's payment link, which Stripe hands back with each payment.
+export const stripeRef = (tid: number) => `tw-${tid}`;
+
 // Entries, fees, payment settings, organizers and the Stripe webhook. Only organizers (and the app owner) see the money.
 export function moneyRoutes(app: Hono<Env>) {
 	app.get(`${P}/entries`, async (c) => {
@@ -133,6 +136,9 @@ export function moneyRoutes(app: Hono<Env>) {
 		const event = JSON.parse(raw);
 		if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
 			const s = event.data?.object ?? {};
+			// Only payments made through this tournament's link count. Anything else sold on the same Stripe account
+			// (t-shirts, another event) has no tag or a different one, and is ignored.
+			if (s.client_reference_id !== stripeRef(tid)) return c.json({ received: true, ignored: "not a payment for this tournament" });
 			if (s.payment_status === "paid") {
 				const email = String(s.customer_details?.email ?? s.customer_email ?? "").trim().toLowerCase();
 				if (email) {

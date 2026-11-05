@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trophy } from "lucide-react";
@@ -94,7 +95,7 @@ export default function Bracket() {
 			)}
 			<div className="overflow-x-auto">
 				<div className="flex min-w-max gap-4">
-					{ROUNDS.map((round) => (
+					{ROUNDS.filter((r) => matches.some((m) => m.bracket_round === r)).map((round) => (
 						<div key={round} className="flex w-60 flex-col gap-3">
 							<h3 className="text-sm font-semibold text-secondary">{round}</h3>
 							<div className="flex flex-1 flex-col justify-around gap-3">
@@ -118,7 +119,7 @@ export default function Bracket() {
 												</button>
 												{m.can_score && !scored && m.team_a_id && m.team_b_id && (
 													<Button size="sm" variant="secondary" asChild>
-														<a href={tour.to(`/score/${m.id}`)}>{live ? "Keep score" : "Score this match"}</a>
+														<Link to={tour.to(`/score/${m.id}`)}>{live ? "Keep score" : "Score this match"}</Link>
 													</Button>
 												)}
 											</div>

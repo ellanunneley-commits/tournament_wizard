@@ -84,6 +84,13 @@ export function matchTitle(m: MatchRow) {
 	return `${m.team_a_name ?? "TBD"} vs ${m.team_b_name ?? "TBD"}`;
 }
 
+// An error from the server, keeping its details (like code: "clears_later") so a page can react to it.
+export class ApiError extends Error {
+	constructor(message: string, public data: any) {
+		super(message);
+	}
+}
+
 export async function api(path: string, method: string, body?: unknown) {
 	const res = await authFetch(path, {
 		method,
@@ -91,6 +98,6 @@ export async function api(path: string, method: string, body?: unknown) {
 		body: body === undefined ? undefined : JSON.stringify(body),
 	});
 	const data = await res.json().catch(() => ({}));
-	if (!res.ok) throw new Error(data.error ?? "Something went wrong");
+	if (!res.ok) throw new ApiError(data.error ?? "Something went wrong", data);
 	return data;
 }

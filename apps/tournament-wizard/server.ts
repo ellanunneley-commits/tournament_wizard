@@ -2,13 +2,13 @@ import { Hono } from "hono";
 import { auth, authMiddleware } from "./auth";
 import { db } from "./lib/db";
 import { computeStandings } from "./lib/standings";
-import { createTournament } from "./lib/create";
-import { advance } from "./lib/bracket";
+import { createTournament, TEAM_COUNTS, TeamCount } from "./lib/create";
+import { advance, clearsLaterMessage, laterMatchesCleared } from "./lib/bracket";
 import { announceNext } from "./lib/autoannounce";
 import { canScoreMatch, captainTeamIds, setTarget } from "./lib/scoring";
 import { FLAT_FEE_CENTS, APP_FEE_RATE, feeFigures } from "./lib/fees";
 import { Env, Row, Sql, Viewer, forbidden, locked, ownerOnly } from "./lib/ctx";
-import { moneyRoutes } from "./routes/money";
+import { moneyRoutes, stripeRef } from "./routes/money";
 import { liveRoutes } from "./routes/live";
 import { announcementRoutes } from "./routes/announcements";
 
@@ -29,7 +29,7 @@ async function isAppOwner(sql: Sql, email: string | null) {
 // Organizers run a tournament and app owners can run any. Teams and guests see a tournament once its app fee is paid or waived.
 async function getViewer(c: any, sql: Sql, tid: number): Promise<Viewer | null> {
 	const email = emailOf(c);
-	const [t] = (await sql`SELECT id, name, payment_link, fees_waived, scoring_format, sets_to_win, set_points, deciding_set_points, auto_announce, announce_minutes, day_start, day_end, game_minutes, (stripe_webhook_secret IS NOT NULL) AS has_secret FROM tournaments WHERE id = ${tid}`) as Row[];
+	const [t] = (await sql`SELECT id, name, team_count, payment_link, fees_waived, scoring_format, sets_to_win, set_points, deciding_set_points, auto_announce, announce_minutes, day_start, day_end, game_minutes, (stripe_webhook_secret IS NOT NULL) AS has_secret FROM tournaments WHERE id = ${tid}`) as Row[];
 	if (!t) return null;
 	let isOrganizer = false;
 	let scorekeeper = false;
@@ -65,6 +65,20 @@ async function ownsTeam(sql: Sql, v: Viewer, tid: number, teamId: number) {
 	if (v.isAdmin) return true;
 	if (!v.email) return false;
 	return ((await sql`SELECT 1 FROM registrations WHERE team_id = ${teamId} AND lower(email) = ${v.email}`) as Row[]).length > 0;
+}
+
+// The entry-fee link a team is sent to. It is tagged with this tournament (so the Stripe webhook can tell this
+// tournament's payments apart from anything else sold on the same Stripe account) and fills in the person's email.
+function payUrl(link: string | null, tid: number, email: string | null) {
+	if (!link) return null;
+	try {
+		const url = new URL(link);
+		url.searchParams.set("client_reference_id", stripeRef(tid));
+		if (email) url.searchParams.set("prefilled_email", email);
+		return url.toString();
+	} catch {
+		return link;
+	}
 }
 
 // A spot nobody has taken yet still carries its placeholder name, so it is shown as "Open spot".
@@ -105,7 +119,7 @@ app.get("/app-api/tournaments", async (c) => {
 	const isOwner = await isAppOwner(sql, email);
 	if (!email) return c.json({ is_owner: false, tournaments: [] });
 	const rows = (await sql`
-		SELECT t.id, t.name, t.created_at, t.fees_waived,
+		SELECT t.id, t.name, t.team_count, t.created_at, t.fees_waived,
 			EXISTS (SELECT 1 FROM organizers o WHERE o.tournament_id = t.id AND lower(o.email) = ${email}) AS organizer,
 			EXISTS (SELECT 1 FROM registrations r WHERE r.tournament_id = t.id AND lower(r.email) = ${email} AND r.status = 'paid') AS captain,
 			EXISTS (SELECT 1 FROM viewers v JOIN teams tm ON tm.id = v.team_id WHERE tm.tournament_id = t.id AND lower(v.email) = ${email}) AS guest,
@@ -113,7 +127,7 @@ app.get("/app-api/tournaments", async (c) => {
 		FROM tournaments t ORDER BY t.id DESC`) as Row[];
 	const mine = rows
 		.filter((t) => isOwner || t.organizer || t.captain || t.guest)
-		.map((t) => ({ id: t.id, name: t.name, created_at: t.created_at, teams: t.teams, role: t.organizer ? "organizer" : t.captain ? "captain" : t.guest ? "guest" : "owner" }));
+		.map((t) => ({ id: t.id, name: t.name, created_at: t.created_at, teams: t.teams, team_count: t.team_count, role: t.organizer ? "organizer" : t.captain ? "captain" : t.guest ? "guest" : "owner" }));
 	return c.json({ is_owner: isOwner, tournaments: mine });
 });
 
@@ -122,9 +136,12 @@ app.post("/app-api/tournaments", async (c) => {
 	const sql = db(c);
 	const email = emailOf(c);
 	if (!email) return c.json({ error: "Sign in first" }, 400);
-	const name = String((await c.req.json()).name ?? "").trim();
+	const body = await c.req.json();
+	const name = String(body.name ?? "").trim();
 	if (!name) return c.json({ error: "Give the tournament a name" }, 400);
-	const id = await createTournament(sql, name, email);
+	const size = Number(body.size ?? 16) as TeamCount;
+	if (!TEAM_COUNTS.includes(size)) return c.json({ error: "Choose 8 or 16 teams" }, 400);
+	const id = await createTournament(sql, name, email, size);
 	return c.json({ id });
 });
 
@@ -159,6 +176,7 @@ app.get(`${P}/access`, async (c) => {
 	return c.json({
 		tournament_id: tid,
 		tournament_name: v.tournament.name,
+		team_count: v.tournament.team_count,
 		email: v.email,
 		is_admin: v.isAdmin,
 		can_see: v.canSee,
@@ -166,6 +184,7 @@ app.get(`${P}/access`, async (c) => {
 		is_owner: v.isOwner,
 		open_slots: open.n,
 		payment_link: v.activated || v.isAdmin ? (v.tournament.payment_link ?? null) : null,
+		pay_url: v.activated || v.isAdmin ? payUrl(v.tournament.payment_link, tid, v.email) : null,
 		has_webhook_secret: v.isAdmin ? !!v.tournament.has_secret : false,
 		auto_announce: { enabled: !!v.tournament.auto_announce, minutes: v.tournament.announce_minutes },
 		day: { start: v.tournament.day_start, end: v.tournament.day_end, game_minutes: v.tournament.game_minutes },
@@ -364,6 +383,12 @@ app.patch(`${P}/matches/:id`, async (c) => {
 	}
 	// A score typed in by hand is a finished match; clearing it also clears anything scored live.
 	const status = aSets !== null ? "final" : "scheduled";
+	// Changing a bracket result can change who moved on. If the later match has already been played, ask first.
+	if (m.stage === "bracket" && !body.force) {
+		const winner = status === "final" ? (aSets! > bSets! ? m.team_a_id : m.team_b_id) : null;
+		const cleared = await laterMatchesCleared(sql, id, winner);
+		if (cleared.length) return c.json({ error: clearsLaterMessage(cleared), code: "clears_later", matches: cleared }, 409);
+	}
 	await sql`DELETE FROM match_sets WHERE match_id = ${id}`;
 	const [row] = await sql`UPDATE matches SET court = ${court}, a_sets = ${aSets}, b_sets = ${bSets}, a_pts = ${aPts}, b_pts = ${bPts}, status = ${status},
 		ended_at = CASE WHEN ${status} = 'final' THEN coalesce(ended_at, NOW()) ELSE NULL END,

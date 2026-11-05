@@ -58,7 +58,7 @@ export default function Standings() {
 				<Stat label="Live now" value={summary ? String(summary.live_now) : "—"} context="matches being scored" />
 				<Stat label="Champion" value={summary?.champion ?? "Not decided"} icon={<Trophy className="size-4" />} />
 			</div>
-			{["A", "B", "C", "D"].map((pool) => (
+			{[...new Set(teams.map((t) => t.pool))].sort().map((pool) => (
 				<section key={pool} className="space-y-2">
 					<h3 className="text-base font-semibold">Pool {pool}</h3>
 					<DataTable

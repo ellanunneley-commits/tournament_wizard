@@ -21,3 +21,26 @@ export async function advance(sql: Sql, matchId: number) {
 		currentId = Number(next.id);
 	}
 }
+
+// Before a bracket result changes: which later matches have already started or finished and would be cleared,
+// because the team that advanced from this match would change. `winner` is the team that would advance (null if none).
+export async function laterMatchesCleared(sql: Sql, matchId: number, winner: number | string | null): Promise<string[]> {
+	const [m] = (await sql`SELECT next_match_id, next_side FROM matches WHERE id = ${matchId}`) as Row[];
+	if (!m?.next_match_id) return [];
+	const [next] = (await sql`SELECT team_a_id, team_b_id FROM matches WHERE id = ${m.next_match_id}`) as Row[];
+	const current = m.next_side === "a" ? next.team_a_id : next.team_b_id;
+	if (String(current ?? "") === String(winner ?? "")) return [];
+	// Walk the rest of the path to the final: any match on it that has been played gets reset.
+	const touched: string[] = [];
+	let id: number | null = Number(m.next_match_id);
+	while (id) {
+		const [x] = (await sql`SELECT label, status, next_match_id FROM matches WHERE id = ${id}`) as Row[];
+		if (!x) break;
+		if (x.status !== "scheduled") touched.push(x.label);
+		id = x.next_match_id ? Number(x.next_match_id) : null;
+	}
+	return touched;
+}
+
+export const clearsLaterMessage = (labels: string[]) =>
+	`This changes who moves on, so ${labels.join(", ")} ${labels.length === 1 ? "has" : "have"} to be cleared and played again.`;

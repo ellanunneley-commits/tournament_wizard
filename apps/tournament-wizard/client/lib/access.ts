@@ -24,6 +24,8 @@ export type Access = {
 	is_owner: boolean;
 	open_slots: number;
 	payment_link: string | null;
+	pay_url: string | null; // the payment link tagged for this tournament, with the person's email filled in
+	team_count: number;
 	has_webhook_secret: boolean;
 	auto_announce: { enabled: boolean; minutes: number };
 	day: { start: string | null; end: string | null; game_minutes: number };

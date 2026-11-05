@@ -9,7 +9,7 @@ import { Badge } from "../components/Badge";
 import { EmptyState } from "../components/EmptyState";
 import { toast } from "../components/Toast";
 import { useT } from "../lib/useT";
-import { MatchRow, api, isLive, isScored, matchTitle } from "../lib/tournament";
+import { ApiError, MatchRow, api, isLive, isScored, matchTitle } from "../lib/tournament";
 import { get } from "../lib/http";
 
 type Side = "a" | "b";
@@ -22,9 +22,11 @@ export default function Score() {
 	const key = ["matches", tour.tid, id];
 	const inFlight = React.useRef(0);
 	const [busy, setBusy] = React.useState(false);
+	const [warning, setWarning] = React.useState<string | null>(null);
 	const { data: match, isLoading, isError } = useQuery<MatchRow>({
 		queryKey: key,
-		refetchInterval: 4000,
+		// Pause the automatic refresh while taps are still on their way, so the score never jumps back.
+		refetchInterval: () => (inFlight.current > 0 ? false : 4000),
 		queryFn: () => get(tour.api(`/matches/${id}`)),
 	});
 
@@ -52,6 +54,8 @@ export default function Score() {
 	// Tap a point: show it at once, tell the server, and let the next refresh settle any difference.
 	async function tap(side: Side, delta: 1 | -1) {
 		if (!current) return;
+		inFlight.current++;
+		await qc.cancelQueries({ queryKey: key });
 		qc.setQueryData<MatchRow>(key, (old) =>
 			old
 				? {
@@ -62,7 +66,6 @@ export default function Score() {
 					}
 				: old,
 		);
-		inFlight.current++;
 		try {
 			await api(tour.api(`/matches/${match!.id}/point`), "POST", { team: side, delta });
 		} catch (err) {
@@ -74,14 +77,16 @@ export default function Score() {
 		}
 	}
 
-	async function action(path: string, ok?: (res: any) => string) {
+	async function action(path: string, ok?: (res: any) => string, force = false) {
 		setBusy(true);
+		setWarning(null);
 		try {
-			const res = await api(tour.api(`/matches/${match!.id}/${path}`), "POST");
+			const res = await api(tour.api(`/matches/${match!.id}/${path}`), "POST", force ? { force } : undefined);
 			await qc.invalidateQueries();
 			if (ok) toast.success(ok(res));
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : "Something went wrong");
+			if (err instanceof ApiError && err.data?.code === "clears_later") setWarning(err.message);
+			else toast.error(err instanceof Error ? err.message : "Something went wrong");
 		} finally {
 			setBusy(false);
 		}
@@ -107,6 +112,14 @@ export default function Score() {
 						<Button variant="secondary" disabled={busy} onClick={() => action("reopen", () => "Last set reopened")}>
 							<Undo2 /> Reopen last set
 						</Button>
+						{warning && (
+							<div role="alert" className="space-y-2 rounded-lg bg-warning-weak p-3 text-sm text-warning-ink">
+								<p className="font-medium">{warning}</p>
+								<Button size="sm" variant="primary" isLoading={busy} onClick={() => action("reopen", () => "Last set reopened", true)}>
+									Reopen anyway
+								</Button>
+							</div>
+						)}
 					</div>
 				</Card>
 			) : match.status === "scheduled" ? (

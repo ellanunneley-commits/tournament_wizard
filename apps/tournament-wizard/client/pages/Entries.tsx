@@ -183,7 +183,7 @@ export default function Entries() {
 						<div className="space-y-2">
 							<Label htmlFor="pay-link">Stripe payment link</Label>
 							<Input id="pay-link" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://buy.stripe.com/…" />
-							<p className="text-sm text-secondary">Teams that have not paid are shown this link. It is your own Stripe, so you keep the entry fees.</p>
+							<p className="text-sm text-secondary">Teams that have not paid are shown this link. It is your own Stripe, so you keep the entry fees. Teams should pay from the button in this app: it tags the payment with this tournament. Someone who paid another way can be added with "Add entry".</p>
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="hook-url">Webhook address for Stripe</Label>

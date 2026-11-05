@@ -45,9 +45,9 @@ export default function Teams() {
 					title="Team names are for teams that have paid"
 					description="Pay the entry fee and name your team to see who else is playing."
 					action={
-						access.payment_link ? (
+						access.pay_url ? (
 							<Button variant="primary" asChild>
-								<a href={access.payment_link} target="_blank" rel="noreferrer">
+								<a href={access.pay_url} target="_blank" rel="noreferrer">
 									Pay the entry fee
 								</a>
 							</Button>

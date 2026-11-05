@@ -3,6 +3,7 @@
 CREATE TABLE tournaments (
   id BIGSERIAL PRIMARY KEY,
   name TEXT NOT NULL,
+  team_count INTEGER NOT NULL DEFAULT 16 CHECK (team_count IN (8, 16)),
   payment_link TEXT,
   stripe_webhook_secret TEXT,
   fees_waived BOOLEAN NOT NULL DEFAULT FALSE,

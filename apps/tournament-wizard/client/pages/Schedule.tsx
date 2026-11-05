@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
@@ -52,7 +53,7 @@ const columnsFor = (to: (p: string) => string, deck: Set<string>): ColumnDef<Mat
 		cell: ({ row }) =>
 			row.original.can_score && !isScored(row.original) ? (
 				<Button size="sm" variant="secondary" asChild>
-					<a href={to(`/score/${row.original.id}`)}>{isLive(row.original) ? "Keep score" : "Score"}</a>
+					<Link to={to(`/score/${row.original.id}`)}>{isLive(row.original) ? "Keep score" : "Score"}</Link>
 				</Button>
 			) : null,
 	},
@@ -88,7 +89,7 @@ export default function Schedule() {
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="all">All pools</SelectItem>
-						{["A", "B", "C", "D"].map((p) => (
+						{[...new Set(matches.map((m) => m.pool).filter((p): p is string => !!p))].sort().map((p) => (
 							<SelectItem key={p} value={p}>
 								Pool {p}
 							</SelectItem>

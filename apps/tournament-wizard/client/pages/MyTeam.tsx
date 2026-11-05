@@ -17,7 +17,7 @@ import { MyEntry, useAccess } from "../lib/access";
 import { ShareLink } from "../components/ShareLink";
 import { useT } from "../lib/useT";
 
-function ClaimForm({ entry, openSlots }: { entry: MyEntry; openSlots: number }) {
+function ClaimForm({ entry, openSlots, teamCount }: { entry: MyEntry; openSlots: number; teamCount: number }) {
 	const tour = useT();
 	const qc = useQueryClient();
 	const [name, setName] = React.useState("");
@@ -44,7 +44,7 @@ function ClaimForm({ entry, openSlots }: { entry: MyEntry; openSlots: number }) 
 					<Label htmlFor={`claim-${entry.id}`}>Team name</Label>
 					<Input id={`claim-${entry.id}`} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Spike Squad" disabled={openSlots === 0} />
 				</div>
-				{openSlots === 0 && <p className="text-sm text-secondary">All 16 places are taken. Please contact the organizers.</p>}
+				{openSlots === 0 && <p className="text-sm text-secondary">All {teamCount} places are taken. Please contact the organizers.</p>}
 				<div className="flex justify-end">
 					<Button type="submit" variant="primary" isLoading={busy} disabled={!name.trim() || openSlots === 0}>
 						Join the tournament
@@ -215,14 +215,14 @@ export default function MyTeam() {
 	return (
 		<div className="space-y-6">
 			<PageHeader title="My team" />
-			{data.registrations.map((entry) => (entry.team_id ? <TeamEditor key={entry.id} entry={entry} /> : <ClaimForm key={entry.id} entry={entry} openSlots={data.open_slots} />))}
+			{data.registrations.map((entry) => (entry.team_id ? <TeamEditor key={entry.id} entry={entry} /> : <ClaimForm key={entry.id} entry={entry} openSlots={data.open_slots} teamCount={data.team_count} />))}
 			{data.registrations.length === 0 && data.is_admin && (
 				<EmptyState icon={<Eye />} title="You're running this tournament" description="Organizers don't have a team of their own here. Captains manage their teams from this page; you can rename any team from the Teams page." />
 			)}
 			{data.registrations.length === 0 && !data.is_admin && data.can_see && (
 				<EmptyState icon={<Eye />} title="You're watching this tournament" description="You were invited as a guest, so you can follow standings, schedule and the bracket. Team pages are managed by captains." />
 			)}
-			{data.registrations.length === 0 && !data.can_see && <PayWithStripe email={data.email} link={data.payment_link} />}
+			{data.registrations.length === 0 && !data.can_see && <PayWithStripe email={data.email} link={data.pay_url} />}
 		</div>
 	);
 }

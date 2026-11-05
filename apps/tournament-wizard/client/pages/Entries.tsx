@@ -22,6 +22,7 @@ import { toast } from "../components/Toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/Dialog";
 import { api } from "../lib/tournament";
 import { useAccess } from "../lib/access";
+import { get } from "../lib/http";
 
 type Entry = {
 	id: string;
@@ -57,18 +58,18 @@ export default function Entries() {
 	const { data: entries = [], isLoading } = useQuery<Entry[]>({
 		queryKey: ["entries", tour.tid],
 		enabled: isAdmin,
-		queryFn: () => fetch(tour.api("/entries")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/entries")),
 	});
 	const { data: organizers = [] } = useQuery<Organizer[]>({
 		queryKey: ["organizers", tour.tid],
 		enabled: isAdmin,
-		queryFn: () => fetch(tour.api("/organizers")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/organizers")),
 	});
 
 	const { data: summary } = useQuery<Summary>({
 		queryKey: ["entries-summary", tour.tid],
 		enabled: isAdmin,
-		queryFn: () => fetch(tour.api("/entries/summary")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/entries/summary")),
 	});
 	const { data: fees } = useFees(isAdmin);
 

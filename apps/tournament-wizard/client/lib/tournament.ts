@@ -1,3 +1,5 @@
+import { authFetch } from "./http";
+
 export type MatchRow = {
 	id: string;
 	stage: "pool" | "bracket";
@@ -83,7 +85,7 @@ export function matchTitle(m: MatchRow) {
 }
 
 export async function api(path: string, method: string, body?: unknown) {
-	const res = await fetch(path, {
+	const res = await authFetch(path, {
 		method,
 		headers: { "Content-Type": "application/json" },
 		body: body === undefined ? undefined : JSON.stringify(body),

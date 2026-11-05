@@ -1,7 +1,5 @@
-import { neon } from "@neondatabase/serverless";
-import { Row } from "./ctx";
+import { Row, Sql } from "./ctx";
 
-type Sql = ReturnType<typeof neon>;
 
 // When a match is final: retire its own announcement, then tell everyone which game is next and start its countdown.
 // The next game is the next unstarted match on the same court (or the next one in the schedule when courts are not used).

@@ -10,6 +10,7 @@ import { Badge } from "../components/Badge";
 import { TeamRow, Summary } from "../lib/tournament";
 import { useT } from "../lib/useT";
 import { AnnouncementsBanner } from "../components/AnnouncementsBanner";
+import { get } from "../lib/http";
 
 const columns: ColumnDef<TeamRow, unknown>[] = [
 	{
@@ -39,12 +40,12 @@ export default function Standings() {
 	const { data: teams = [], isLoading } = useQuery<TeamRow[]>({
 		queryKey: ["standings", tour.tid],
 		refetchInterval: 8000,
-		queryFn: () => fetch(tour.api("/standings")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/standings")),
 	});
 	const { data: summary } = useQuery<Summary>({
 		queryKey: ["summary", tour.tid],
 		refetchInterval: 8000,
-		queryFn: () => fetch(tour.api("/summary")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/summary")),
 	});
 
 	return (

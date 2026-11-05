@@ -1,0 +1,13 @@
+// Cloudflare Workers settings: the server answers /app-api, and the built app (dist) is served for everything else.
+// Secrets are not kept here. Add them with:  npx wrangler secret put DATABASE_URL  (and CLERK_SECRET_KEY)
+{
+	"name": "tournament-wizard",
+	"main": "apps/tournament-wizard/server.ts",
+	"compatibility_date": "2026-10-01",
+	"compatibility_flags": ["nodejs_compat"],
+	"assets": {
+		"directory": "./dist",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": ["/app-api/*"]
+	}
+}

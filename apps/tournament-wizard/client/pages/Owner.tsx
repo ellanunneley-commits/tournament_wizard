@@ -10,6 +10,7 @@ import { Badge } from "../components/Badge";
 import { Input } from "../components/Input";
 import { usd } from "../components/FeesCard";
 import type { TournamentList } from "./Home";
+import { get } from "../lib/http";
 
 type Overview = {
 	id: string;
@@ -38,14 +39,14 @@ export default function Owner() {
 	const [query, setQuery] = React.useState("");
 	const { data: list } = useQuery<TournamentList>({
 		queryKey: ["tournaments"],
-		queryFn: () => fetch("/app-api/tournaments").then((r) => r.json()),
+		queryFn: () => get("/app-api/tournaments"),
 	});
 	const isOwner = !!list?.is_owner;
 	const { data = [], isLoading } = useQuery<Overview[]>({
 		queryKey: ["owner-overview"],
 		enabled: isOwner,
 		refetchInterval: 30000,
-		queryFn: () => fetch("/app-api/owner/overview").then((r) => r.json()),
+		queryFn: () => get("/app-api/owner/overview"),
 	});
 
 	if (!list) return <PageHeader title="Owner" />;

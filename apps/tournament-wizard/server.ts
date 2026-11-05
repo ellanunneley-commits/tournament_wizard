@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { neon, types } from "@neondatabase/serverless";
-import { auth } from "./auth";
+import { auth, authMiddleware } from "./auth";
+import { db } from "./lib/db";
 import { computeStandings } from "./lib/standings";
 import { createTournament } from "./lib/create";
 import { advance } from "./lib/bracket";
@@ -12,10 +12,8 @@ import { moneyRoutes } from "./routes/money";
 import { liveRoutes } from "./routes/live";
 import { announcementRoutes } from "./routes/announcements";
 
-types.setTypeParser(types.builtins.NUMERIC, (v) => Number(v));
-types.setTypeParser(types.builtins.DATE, (v) => v);
-
 const app = new Hono<Env>();
+app.use("/app-api/*", authMiddleware);
 const P = "/app-api/t/:tid";
 
 // ---------- who is looking ----------
@@ -50,7 +48,7 @@ async function getViewer(c: any, sql: Sql, tid: number): Promise<Viewer | null> 
 }
 
 app.use(`${P}/*`, async (c, next) => {
-	const sql = neon(c.env.DATABASE_URL);
+	const sql = db(c);
 	const tid = Number(c.req.param("tid"));
 	if (!Number.isInteger(tid)) return c.json({ error: "Tournament not found" }, 404);
 	const v = await getViewer(c, sql, tid);
@@ -102,7 +100,7 @@ async function allMatches(sql: Sql, tid: number) {
 // ---------- the list of tournaments ----------
 
 app.get("/app-api/tournaments", async (c) => {
-	const sql = neon(c.env.DATABASE_URL);
+	const sql = db(c);
 	const email = emailOf(c);
 	const isOwner = await isAppOwner(sql, email);
 	if (!email) return c.json({ is_owner: false, tournaments: [] });
@@ -121,7 +119,7 @@ app.get("/app-api/tournaments", async (c) => {
 
 // Anyone signed in can start a tournament and becomes its organizer. It opens to teams once the app fee is paid.
 app.post("/app-api/tournaments", async (c) => {
-	const sql = neon(c.env.DATABASE_URL);
+	const sql = db(c);
 	const email = emailOf(c);
 	if (!email) return c.json({ error: "Sign in first" }, 400);
 	const name = String((await c.req.json()).name ?? "").trim();
@@ -132,7 +130,7 @@ app.post("/app-api/tournaments", async (c) => {
 
 // The owner's view of every tournament and what each owes.
 app.get("/app-api/owner/overview", async (c) => {
-	const sql = neon(c.env.DATABASE_URL);
+	const sql = db(c);
 	if (!(await isAppOwner(sql, emailOf(c)))) return ownerOnly(c);
 	const rows = (await sql`
 		SELECT t.id, t.name, t.fees_waived, t.created_by, t.created_at,

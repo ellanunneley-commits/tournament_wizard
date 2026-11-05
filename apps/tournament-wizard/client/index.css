@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+/* Colors used across the app. Light by default, dark when the phone is in dark mode. */
+@theme {
+	--color-primary: #ea580c;
+	--color-primary-hover: #c2410c;
+	--color-on-primary: #ffffff;
+	--color-ink: #0f172a;
+	--color-ink-2: #334155;
+	--color-secondary: #64748b;
+	--color-tertiary: #94a3b8;
+	--color-page: #f8fafc;
+	--color-surface: #ffffff;
+	--color-subtle: #f1f5f9;
+	--color-line: #e2e8f0;
+	--color-accent-ink: #c2410c;
+	--color-success-weak: #dcfce7;
+	--color-success-ink: #166534;
+	--color-info-weak: #e0f2fe;
+	--color-info-ink: #075985;
+	--color-warning-weak: #fef3c7;
+	--color-warning-ink: #92400e;
+	--color-error-weak: #fee2e2;
+	--color-error-ink: #991b1b;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-primary: #f97316;
+		--color-primary-hover: #fb923c;
+		--color-on-primary: #1c0a00;
+		--color-ink: #f1f5f9;
+		--color-ink-2: #cbd5e1;
+		--color-secondary: #94a3b8;
+		--color-tertiary: #64748b;
+		--color-page: #0b1120;
+		--color-surface: #131c2e;
+		--color-subtle: #1e293b;
+		--color-line: #263449;
+		--color-accent-ink: #fdba74;
+		--color-success-weak: #14361f;
+		--color-success-ink: #86efac;
+		--color-info-weak: #0c2d44;
+		--color-info-ink: #7dd3fc;
+		--color-warning-weak: #3d2a0a;
+		--color-warning-ink: #fcd34d;
+		--color-error-weak: #3f1515;
+		--color-error-ink: #fca5a5;
+	}
+}
+
+html {
+	-webkit-tap-highlight-color: transparent;
+}
+body {
+	background: var(--color-page);
+	color: var(--color-ink);
+	font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}

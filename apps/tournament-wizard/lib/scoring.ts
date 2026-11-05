@@ -1,7 +1,5 @@
-import { neon } from "@neondatabase/serverless";
-import { Row, Viewer } from "./ctx";
+import { Row, Viewer, Sql } from "./ctx";
 
-type Sql = ReturnType<typeof neon>;
 
 // Teams whose captain is the signed-in person (they may score the matches their team refs).
 export async function captainTeamIds(sql: Sql, v: Viewer, tid: number) {

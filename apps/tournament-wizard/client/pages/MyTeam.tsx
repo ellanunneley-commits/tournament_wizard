@@ -1,7 +1,7 @@
 import React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CreditCard, Eye, LogIn, Trash2, UserPlus } from "lucide-react";
-import { signIn } from "../../auth";
+import { useSession } from "../lib/auth";
 import { PageHeader } from "../components/PageHeader";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
@@ -194,6 +194,7 @@ function PayWithStripe({ email, link }: { email: string; link: string | null }) 
 
 export default function MyTeam() {
 	const { data, isLoading } = useAccess();
+	const { signIn } = useSession();
 
 	if (isLoading || !data) return <PageHeader title="My team" />;
 
@@ -215,7 +216,10 @@ export default function MyTeam() {
 		<div className="space-y-6">
 			<PageHeader title="My team" />
 			{data.registrations.map((entry) => (entry.team_id ? <TeamEditor key={entry.id} entry={entry} /> : <ClaimForm key={entry.id} entry={entry} openSlots={data.open_slots} />))}
-			{data.registrations.length === 0 && data.can_see && (
+			{data.registrations.length === 0 && data.is_admin && (
+				<EmptyState icon={<Eye />} title="You're running this tournament" description="Organizers don't have a team of their own here. Captains manage their teams from this page; you can rename any team from the Teams page." />
+			)}
+			{data.registrations.length === 0 && !data.is_admin && data.can_see && (
 				<EmptyState icon={<Eye />} title="You're watching this tournament" description="You were invited as a guest, so you can follow standings, schedule and the bracket. Team pages are managed by captains." />
 			)}
 			{data.registrations.length === 0 && !data.can_see && <PayWithStripe email={data.email} link={data.payment_link} />}

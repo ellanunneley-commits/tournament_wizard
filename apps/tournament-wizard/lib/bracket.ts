@@ -1,7 +1,5 @@
-import { neon } from "@neondatabase/serverless";
-import { Row } from "./ctx";
+import { Row, Sql } from "./ctx";
 
-type Sql = ReturnType<typeof neon>;
 
 // Put a finished bracket match's winner into the next round. If the winner changed (or the match was reopened), clear the later rounds.
 export async function advance(sql: Sql, matchId: number) {

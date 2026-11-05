@@ -13,6 +13,7 @@ import { Label } from "../components/Label";
 import { toast } from "../components/Toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/Dialog";
 import { api } from "../lib/tournament";
+import { get } from "../lib/http";
 
 export type TournamentRow = { id: string; name: string; created_at: string; teams: number; role: "organizer" | "captain" | "guest" | "owner" };
 export type TournamentList = { is_owner: boolean; tournaments: TournamentRow[] };
@@ -38,7 +39,7 @@ export default function Home() {
 	const [busy, setBusy] = React.useState(false);
 	const { data, isLoading } = useQuery<TournamentList>({
 		queryKey: ["tournaments"],
-		queryFn: () => fetch("/app-api/tournaments").then((r) => r.json()),
+		queryFn: () => get("/app-api/tournaments"),
 	});
 
 	async function create(e: React.FormEvent) {

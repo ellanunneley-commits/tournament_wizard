@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useT } from "./useT";
+import { get } from "./http";
 
 export type Player = { id: string; team_id: string; name: string };
 
@@ -35,6 +36,6 @@ export function useAccess() {
 	const t = useT();
 	return useQuery<Access>({
 		queryKey: ["access", t.tid],
-		queryFn: () => fetch(t.api("/access")).then((r) => r.json()),
+		queryFn: () => get(t.api("/access")),
 	});
 }

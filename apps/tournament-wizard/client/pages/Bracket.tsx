@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { MatchRow, Summary, api, isLive, isScored } from "../lib/tournament";
 import { useAccess } from "../lib/access";
 import { useT } from "../lib/useT";
+import { get } from "../lib/http";
 
 const ROUNDS = ["Round of 16", "Quarterfinal", "Semifinal", "Final"];
 
@@ -37,12 +38,12 @@ export default function Bracket() {
 	const { data: matches = [] } = useQuery<MatchRow[]>({
 		queryKey: ["matches", tour.tid, "bracket"],
 		refetchInterval: 8000,
-		queryFn: () => fetch(tour.api("/matches?stage=bracket")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/matches?stage=bracket")),
 	});
 	const { data: summary } = useQuery<Summary>({
 		queryKey: ["summary", tour.tid],
 		refetchInterval: 20000,
-		queryFn: () => fetch(tour.api("/summary")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/summary")),
 	});
 
 	const open = matches.find((m) => m.id === openId) ?? null;

@@ -10,6 +10,7 @@ import { EmptyState } from "../components/EmptyState";
 import { toast } from "../components/Toast";
 import { useT } from "../lib/useT";
 import { MatchRow, api, isLive, isScored, matchTitle } from "../lib/tournament";
+import { get } from "../lib/http";
 
 type Side = "a" | "b";
 
@@ -24,11 +25,7 @@ export default function Score() {
 	const { data: match, isLoading, isError } = useQuery<MatchRow>({
 		queryKey: key,
 		refetchInterval: 4000,
-		queryFn: () =>
-			fetch(tour.api(`/matches/${id}`)).then((r) => {
-				if (!r.ok) throw new Error("Not found");
-				return r.json();
-			}),
+		queryFn: () => get(tour.api(`/matches/${id}`)),
 	});
 
 	if (isError) return <EmptyState title="Match not found" description="It may have been removed." />;

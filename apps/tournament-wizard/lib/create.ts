@@ -1,6 +1,5 @@
-import { neon } from "@neondatabase/serverless";
+import type { Sql } from "./ctx";
 
-type Sql = ReturnType<typeof neon>;
 
 // A new tournament starts with 16 open team spots in 4 pools, the 24 pool matches and the 15 bracket matches.
 export async function createTournament(sql: Sql, name: string, email: string) {

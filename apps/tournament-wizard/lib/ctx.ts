@@ -1,7 +1,7 @@
-import { neon } from "@neondatabase/serverless";
+import type { NeonQueryFunction } from "@neondatabase/serverless";
 
 export type Row = Record<string, any>;
-export type Sql = ReturnType<typeof neon>;
+export type Sql = NeonQueryFunction<false, false>;
 
 export type Viewer = {
 	email: string | null;
@@ -16,8 +16,8 @@ export type Viewer = {
 };
 
 export type Env = {
-	Bindings: { DATABASE_URL: string };
-	Variables: { sql: Sql; tid: number; v: Viewer };
+	Bindings: { DATABASE_URL: string; CLERK_SECRET_KEY?: string; DEV_AUTH?: string; LOCAL_SQL?: Sql };
+	Variables: { sql: Sql; tid: number; v: Viewer; email: string | null };
 };
 
 export const forbidden = (c: any) => c.json({ error: "Only the organizers can do that" }, 403);

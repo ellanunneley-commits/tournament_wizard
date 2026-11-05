@@ -12,6 +12,7 @@ import { useT } from "../lib/useT";
 import { Button } from "../components/Button";
 import { Lock } from "lucide-react";
 import { Link } from "react-router-dom";
+import { get } from "../lib/http";
 
 const columns: ColumnDef<TeamRow, unknown>[] = [
 	{ accessorKey: "name", header: "Team" },
@@ -29,7 +30,7 @@ export default function Teams() {
 	const { data: teams = [], isLoading } = useQuery<TeamRow[]>({
 		queryKey: ["teams", tour.tid],
 		refetchInterval: 20000,
-		queryFn: () => fetch(tour.api("/teams")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/teams")),
 	});
 	const { data: access } = useAccess();
 	const q = query.trim().toLowerCase();

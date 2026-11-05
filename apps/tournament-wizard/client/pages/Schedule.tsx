@@ -11,6 +11,7 @@ import { MatchRow, isLive, isScored, scoreText, teamLabel } from "../lib/tournam
 import { useT } from "../lib/useT";
 import { Button } from "../components/Button";
 import { Countdown } from "../components/Countdown";
+import { get } from "../lib/http";
 
 const statusBadge = (m: MatchRow) => (isScored(m) ? <Badge tone="success">Final</Badge> : isLive(m) ? <Badge tone="info">In Progress</Badge> : <Badge>Scheduled</Badge>);
 
@@ -65,7 +66,7 @@ export default function Schedule() {
 	const { data: matches = [], isLoading } = useQuery<MatchRow[]>({
 		queryKey: ["matches", tour.tid, "pool"],
 		refetchInterval: 8000,
-		queryFn: () => fetch(tour.api("/matches?stage=pool")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/matches?stage=pool")),
 	});
 	const deck = React.useMemo(() => onDeckIds(matches), [matches]);
 	const columns = React.useMemo(() => columnsFor(tour.to, deck), [tour.tid, deck]);

@@ -12,6 +12,7 @@ import { useAccess } from "../lib/access";
 import { useT } from "../lib/useT";
 import { MatchRow, isLive, isScored, teamLabel } from "../lib/tournament";
 import { CourtStat, NO_COURT, courtStats, fmtDuration, fmtSigned, fmtTime, laneOf, lengthOf, playOrder, plannedStarts } from "../lib/timing";
+import { get } from "../lib/http";
 
 const paceBadge = (s: CourtStat) =>
 	s.pace === "long" ? <Badge tone="warning">Running long {fmtSigned(s.diff ?? 0)}</Badge> : s.pace === "short" ? <Badge tone="info">Running short {fmtSigned(s.diff ?? 0)}</Badge> : s.pace === "on pace" ? <Badge tone="success">On pace</Badge> : <Badge>No data yet</Badge>;
@@ -38,7 +39,7 @@ export default function Master() {
 	const { data: matches = [], isLoading } = useQuery<MatchRow[]>({
 		queryKey: ["matches", tour.tid, "all"],
 		refetchInterval: 8000,
-		queryFn: () => fetch(tour.api("/matches")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/matches")),
 	});
 
 	if (!access) return <PageHeader title="Master schedule" />;

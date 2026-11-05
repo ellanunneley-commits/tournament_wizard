@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { Env, Row, forbidden } from "../lib/ctx";
-import { advance } from "../lib/bracket";
+import { advance, clearsLaterMessage, laterMatchesCleared } from "../lib/bracket";
 import { canScoreMatch, captainTeamIds, recompute, setIsOver, setTarget } from "../lib/scoring";
 import { announceNext, retireAnnouncements } from "../lib/autoannounce";
 
@@ -84,6 +84,12 @@ export function liveRoutes(app: Hono<Env>) {
 		const m = r.m!;
 		const [last] = (await sql`SELECT * FROM match_sets WHERE match_id = ${m.id} AND finished ORDER BY set_number DESC LIMIT 1`) as Row[];
 		if (!last) return c.json({ error: "No finished set to reopen" }, 400);
+		// Reopening a finished bracket match takes its winner back out of the next round.
+		if (m.stage === "bracket" && m.status === "final") {
+			const body = await c.req.json().catch(() => ({}));
+			const cleared = body.force ? [] : await laterMatchesCleared(sql, Number(m.id), null);
+			if (cleared.length) return c.json({ error: clearsLaterMessage(cleared), code: "clears_later", matches: cleared }, 409);
+		}
 		const cur = await currentSet(sql, Number(m.id));
 		if (cur && (cur.a_pts > 0 || cur.b_pts > 0)) return c.json({ error: "Take the points off the current set first" }, 400);
 		if (cur) await sql`DELETE FROM match_sets WHERE id = ${cur.id}`;

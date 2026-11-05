@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Megaphone, Timer } from "lucide-react";
 import { Countdown } from "./Countdown";
 import { useT } from "../lib/useT";
+import { get } from "../lib/http";
 
 export type Announcement = {
 	id: string;
@@ -22,7 +23,7 @@ export function AnnouncementsBanner() {
 	const { data = [] } = useQuery<Announcement[]>({
 		queryKey: ["announcements", tour.tid],
 		refetchInterval: 10000,
-		queryFn: () => fetch(tour.api("/announcements")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/announcements")),
 	});
 	const active = Array.isArray(data) ? data.filter((a) => a.active && !a.expired) : [];
 	if (active.length === 0) return null;

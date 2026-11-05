@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useT } from "./useT";
+import { get } from "./http";
 
 export type Player = { id: string; team_id: string; name: string };
 
@@ -23,6 +24,8 @@ export type Access = {
 	is_owner: boolean;
 	open_slots: number;
 	payment_link: string | null;
+	pay_url: string | null; // the payment link tagged for this tournament, with the person's email filled in
+	team_count: number;
 	has_webhook_secret: boolean;
 	auto_announce: { enabled: boolean; minutes: number };
 	day: { start: string | null; end: string | null; game_minutes: number };
@@ -35,6 +38,6 @@ export function useAccess() {
 	const t = useT();
 	return useQuery<Access>({
 		queryKey: ["access", t.tid],
-		queryFn: () => fetch(t.api("/access")).then((r) => r.json()),
+		queryFn: () => get(t.api("/access")),
 	});
 }

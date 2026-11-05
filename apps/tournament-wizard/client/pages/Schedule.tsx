@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
@@ -11,6 +12,7 @@ import { MatchRow, isLive, isScored, scoreText, teamLabel } from "../lib/tournam
 import { useT } from "../lib/useT";
 import { Button } from "../components/Button";
 import { Countdown } from "../components/Countdown";
+import { get } from "../lib/http";
 
 const statusBadge = (m: MatchRow) => (isScored(m) ? <Badge tone="success">Final</Badge> : isLive(m) ? <Badge tone="info">In Progress</Badge> : <Badge>Scheduled</Badge>);
 
@@ -51,11 +53,51 @@ const columnsFor = (to: (p: string) => string, deck: Set<string>): ColumnDef<Mat
 		cell: ({ row }) =>
 			row.original.can_score && !isScored(row.original) ? (
 				<Button size="sm" variant="secondary" asChild>
-					<a href={to(`/score/${row.original.id}`)}>{isLive(row.original) ? "Keep score" : "Score"}</a>
+					<Link to={to(`/score/${row.original.id}`)}>{isLive(row.original) ? "Keep score" : "Score"}</Link>
 				</Button>
 			) : null,
 	},
 ];
+
+// One match on a phone: where and when, the two teams with the score, who refs, and a button to score it.
+function MatchCard({ m, to, deck }: { m: MatchRow; to: (p: string) => string; deck: Set<string> }) {
+	const won = (side: "a" | "b") => isScored(m) && (side === "a" ? (m.a_sets ?? 0) > (m.b_sets ?? 0) : (m.b_sets ?? 0) > (m.a_sets ?? 0));
+	const line = (side: "a" | "b") => {
+		const name = side === "a" ? teamLabel(m.team_a_name, m.team_a_code) : teamLabel(m.team_b_name, m.team_b_code);
+		const sets = side === "a" ? m.a_sets : m.b_sets;
+		const live = side === "a" ? m.cur_a : m.cur_b;
+		return (
+			<div className={`flex items-center justify-between gap-3 ${won(side) ? "font-semibold" : isScored(m) ? "text-secondary" : ""}`}>
+				<span className="min-w-0 truncate">{name}</span>
+				<span className="shrink-0 tabular-nums">{isLive(m) ? <><span className="text-lg font-bold">{live ?? 0}</span> <span className="text-xs text-secondary">({sets ?? 0})</span></> : isScored(m) ? sets : ""}</span>
+			</div>
+		);
+	};
+	return (
+		<div className="space-y-2">
+			<div className="flex items-center justify-between gap-2 text-xs text-secondary">
+				<span>
+					{m.label} · Round {m.round}
+					{m.court ? ` · ${m.court}` : ""}
+				</span>
+				<span className="flex items-center gap-1.5">
+					{m.starts_at && m.status === "scheduled" ? <Badge tone="warning"><Countdown to={m.starts_at} /></Badge> : deck.has(m.id) ? <Badge tone="warning">On deck</Badge> : null}
+					{statusBadge(m)}
+				</span>
+			</div>
+			{line("a")}
+			{line("b")}
+			<div className="flex items-center justify-between gap-2">
+				<span className="min-w-0 truncate text-xs text-secondary">Ref: {teamLabel(m.ref_name, m.ref_code)}</span>
+				{m.can_score && !isScored(m) && (
+					<Button size="sm" variant={isLive(m) ? "primary" : "secondary"} asChild>
+						<Link to={to(`/score/${m.id}`)}>{isLive(m) ? "Keep score" : "Score"}</Link>
+					</Button>
+				)}
+			</div>
+		</div>
+	);
+}
 
 export default function Schedule() {
 	const [pool, setPool] = React.useState("all");
@@ -65,7 +107,7 @@ export default function Schedule() {
 	const { data: matches = [], isLoading } = useQuery<MatchRow[]>({
 		queryKey: ["matches", tour.tid, "pool"],
 		refetchInterval: 8000,
-		queryFn: () => fetch(tour.api("/matches?stage=pool")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/matches?stage=pool")),
 	});
 	const deck = React.useMemo(() => onDeckIds(matches), [matches]);
 	const columns = React.useMemo(() => columnsFor(tour.to, deck), [tour.tid, deck]);
@@ -87,7 +129,7 @@ export default function Schedule() {
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="all">All pools</SelectItem>
-						{["A", "B", "C", "D"].map((p) => (
+						{[...new Set(matches.map((m) => m.pool).filter((p): p is string => !!p))].sort().map((p) => (
 							<SelectItem key={p} value={p}>
 								Pool {p}
 							</SelectItem>
@@ -125,6 +167,7 @@ export default function Schedule() {
 				data={shown}
 				isLoading={isLoading}
 				getRowHref={(m: MatchRow) => tour.to(`/schedule/${m.id}`)}
+				mobileCard={(m: MatchRow) => <MatchCard m={m} to={tour.to} deck={deck} />}
 				emptyState={<EmptyState icon={<CalendarX />} title="No matches" description="Try a different filter." />}
 			/>
 		</div>

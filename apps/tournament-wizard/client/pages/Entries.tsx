@@ -22,6 +22,7 @@ import { toast } from "../components/Toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/Dialog";
 import { api } from "../lib/tournament";
 import { useAccess } from "../lib/access";
+import { get } from "../lib/http";
 
 type Entry = {
 	id: string;
@@ -57,18 +58,18 @@ export default function Entries() {
 	const { data: entries = [], isLoading } = useQuery<Entry[]>({
 		queryKey: ["entries", tour.tid],
 		enabled: isAdmin,
-		queryFn: () => fetch(tour.api("/entries")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/entries")),
 	});
 	const { data: organizers = [] } = useQuery<Organizer[]>({
 		queryKey: ["organizers", tour.tid],
 		enabled: isAdmin,
-		queryFn: () => fetch(tour.api("/organizers")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/organizers")),
 	});
 
 	const { data: summary } = useQuery<Summary>({
 		queryKey: ["entries-summary", tour.tid],
 		enabled: isAdmin,
-		queryFn: () => fetch(tour.api("/entries/summary")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/entries/summary")),
 	});
 	const { data: fees } = useFees(isAdmin);
 
@@ -182,7 +183,7 @@ export default function Entries() {
 						<div className="space-y-2">
 							<Label htmlFor="pay-link">Stripe payment link</Label>
 							<Input id="pay-link" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://buy.stripe.com/…" />
-							<p className="text-sm text-secondary">Teams that have not paid are shown this link. It is your own Stripe, so you keep the entry fees.</p>
+							<p className="text-sm text-secondary">Teams that have not paid are shown this link. It is your own Stripe, so you keep the entry fees. Teams should pay from the button in this app: it tags the payment with this tournament. Someone who paid another way can be added with "Add entry".</p>
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="hook-url">Webhook address for Stripe</Label>

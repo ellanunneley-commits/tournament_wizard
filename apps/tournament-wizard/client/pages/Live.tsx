@@ -13,6 +13,7 @@ import { useT } from "../lib/useT";
 import { AnnouncementsBanner } from "../components/AnnouncementsBanner";
 import { Countdown } from "../components/Countdown";
 import { MatchRow, isLive, matchTitle } from "../lib/tournament";
+import { get } from "../lib/http";
 
 const where = (m: MatchRow) => (m.stage === "pool" ? `Pool ${m.pool} · Round ${m.round}` : (m.bracket_round ?? "Bracket"));
 
@@ -34,7 +35,7 @@ export default function Live() {
 	const { data: matches = [], isLoading } = useQuery<MatchRow[]>({
 		queryKey: ["matches", tour.tid, "all"],
 		refetchInterval: 4000,
-		queryFn: () => fetch(tour.api("/matches")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/matches")),
 	});
 
 	const live = matches.filter(isLive).sort((a, b) => (a.court ?? "~").localeCompare(b.court ?? "~") || a.sort_order - b.sort_order);

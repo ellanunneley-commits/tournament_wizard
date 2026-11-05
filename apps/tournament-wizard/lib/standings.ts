@@ -47,17 +47,21 @@ export function computeStandings(teams: Row[], poolMatches: Row[]) {
 		s.score = s.wins * 1000 + setRatio * 10 + ptRatio;
 	}
 	const byScore = (x: Row, y: Row) => y.score - x.score || x.number - y.number;
-	for (const pool of ["A", "B", "C", "D"]) {
+	// Rank within each pool, then seed: every pool winner first (best score first), then every runner-up, and so on.
+	const pools = [...new Set(list.map((s) => s.pool as string))].sort();
+	for (const pool of pools) {
 		list
 			.filter((s) => s.pool === pool)
 			.sort(byScore)
 			.forEach((s, i) => (s.pool_rank = i + 1));
 	}
-	for (let r = 1; r <= 4; r++) {
+	const ranks = Math.max(0, ...list.map((s) => s.pool_rank as number));
+	let seed = 1;
+	for (let r = 1; r <= ranks; r++) {
 		list
 			.filter((s) => s.pool_rank === r)
 			.sort(byScore)
-			.forEach((s, i) => (s.seed = (r - 1) * 4 + i + 1));
+			.forEach((s) => (s.seed = seed++));
 	}
 	return list.sort((x, y) => x.seed - y.seed);
 }

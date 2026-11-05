@@ -18,6 +18,7 @@ import { Announcement } from "../components/AnnouncementsBanner";
 import { api } from "../lib/tournament";
 import { useAccess } from "../lib/access";
 import { useT } from "../lib/useT";
+import { get } from "../lib/http";
 
 const stamp = (iso: string) => new Date(iso).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
@@ -36,7 +37,7 @@ export default function Announcements() {
 	const { data = [], isLoading } = useQuery<Announcement[]>({
 		queryKey: ["announcements", tour.tid, "all"],
 		enabled: isAdmin,
-		queryFn: () => fetch(tour.api("/announcements")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/announcements")),
 	});
 
 	async function run(fn: () => Promise<unknown>, ok: string) {

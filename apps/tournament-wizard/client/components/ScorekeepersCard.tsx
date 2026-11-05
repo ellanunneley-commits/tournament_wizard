@@ -8,6 +8,7 @@ import { Media } from "./Media";
 import { toast } from "./Toast";
 import { api } from "../lib/tournament";
 import { useT } from "../lib/useT";
+import { get } from "../lib/http";
 
 type Scorekeeper = { id: string; email: string };
 
@@ -19,7 +20,7 @@ export function ScorekeepersCard() {
 	const [busy, setBusy] = React.useState(false);
 	const { data = [] } = useQuery<Scorekeeper[]>({
 		queryKey: ["scorekeepers", tour.tid],
-		queryFn: () => fetch(tour.api("/scorekeepers")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/scorekeepers")),
 	});
 
 	async function run(fn: () => Promise<unknown>, ok: string) {

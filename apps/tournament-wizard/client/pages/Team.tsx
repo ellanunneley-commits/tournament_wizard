@@ -16,6 +16,7 @@ import { toast } from "../components/Toast";
 import { MatchRow, TeamRow, api, isScored, scoreText } from "../lib/tournament";
 import { useAccess } from "../lib/access";
 import { useT } from "../lib/useT";
+import { get } from "../lib/http";
 
 type TeamDetail = { team: TeamRow; matches: MatchRow[]; players: { id: string; name: string }[]; claimed: boolean };
 
@@ -29,11 +30,7 @@ export default function Team() {
 	const { data, isLoading, isError } = useQuery<TeamDetail>({
 		queryKey: ["teams", tour.tid, id],
 		refetchInterval: 20000,
-		queryFn: () =>
-			fetch(tour.api(`/teams/${id}`)).then((r) => {
-				if (!r.ok) throw new Error("Not found");
-				return r.json();
-			}),
+		queryFn: () => get(tour.api(`/teams/${id}`)),
 	});
 
 	React.useEffect(() => {

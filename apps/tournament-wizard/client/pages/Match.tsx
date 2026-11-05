@@ -11,6 +11,7 @@ import { ScoreForm } from "../components/ScoreForm";
 import { useAccess } from "../lib/access";
 import { useT } from "../lib/useT";
 import { MatchRow, isLive, isScored, matchTitle, teamLabel } from "../lib/tournament";
+import { get } from "../lib/http";
 
 export default function Match() {
 	const { id } = useParams();
@@ -19,11 +20,7 @@ export default function Match() {
 	const { data: match, isLoading, isError } = useQuery<MatchRow>({
 		queryKey: ["matches", tour.tid, id],
 		refetchInterval: 5000,
-		queryFn: () =>
-			fetch(tour.api(`/matches/${id}`)).then((r) => {
-				if (!r.ok) throw new Error("Not found");
-				return r.json();
-			}),
+		queryFn: () => get(tour.api(`/matches/${id}`)),
 	});
 
 	if (isError) return <EmptyState title="Match not found" description="It may have been removed." />;

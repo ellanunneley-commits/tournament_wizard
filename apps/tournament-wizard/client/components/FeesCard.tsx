@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { api } from "../lib/tournament";
 import { useT } from "../lib/useT";
 import { Switch } from "./Switch";
+import { get } from "../lib/http";
 
 export type Fees = {
 	waived: boolean;
@@ -37,7 +38,7 @@ export function useFees(enabled: boolean) {
 	return useQuery<Fees>({
 		queryKey: ["fees", t.tid],
 		enabled,
-		queryFn: () => fetch(t.api("/fees")).then((r) => r.json()),
+		queryFn: () => get(t.api("/fees")),
 	});
 }
 

@@ -21,6 +21,7 @@ import Team from "./pages/Team";
 import MyTeam from "./pages/MyTeam";
 import Entries from "./pages/Entries";
 import Announcements from "./pages/Announcements";
+import { get } from "./lib/http";
 
 // Tournament pages are for registered teams, their invited guests and organizers.
 function Members({ children }: { children: React.ReactNode }) {
@@ -36,13 +37,13 @@ function TournamentLayout() {
 	const { data: access } = useAccess();
 	const base = `/t/${tid}`;
 	const items = [
-		{ href: "/", label: "Tournaments", icon: <Trophy /> },
+		{ href: "/", label: "Tournaments", icon: <Trophy />, more: true },
 		...(access?.can_see
 			? [
 					{ href: base, label: "Standings", icon: <ListOrdered /> },
 					{ href: `${base}/live`, label: "Live", icon: <Radio /> },
 					{ href: `${base}/schedule`, label: "Schedule", icon: <CalendarDays /> },
-					{ href: `${base}/master`, label: "Master", icon: <Clock /> },
+					{ href: `${base}/master`, label: "Master", icon: <Clock />, more: true },
 					{ href: `${base}/bracket`, label: "Bracket", icon: <Network /> },
 					{ href: `${base}/teams`, label: "Teams", icon: <Users /> },
 				]
@@ -58,7 +59,7 @@ function TournamentLayout() {
 	return (
 		<>
 			<Nav layout="top" items={items} />
-			<main className="mx-auto max-w-[1200px] px-4 pt-6 pb-8">
+			<main className="mx-auto max-w-[1200px] px-4 pt-4 pb-28 md:pt-6 md:pb-8">
 				{access && <p className="mb-2 text-sm text-secondary">{access.tournament_name}</p>}
 				<RouterRoutes>
 					<RouterRoute path="/" element={<Members><Standings /></Members>} />
@@ -83,7 +84,7 @@ function TournamentLayout() {
 function GlobalLayout() {
 	const { data } = useQuery<TournamentList>({
 		queryKey: ["tournaments"],
-		queryFn: () => fetch("/app-api/tournaments").then((r) => r.json()),
+		queryFn: () => get("/app-api/tournaments"),
 	});
 	const items = [
 		{ href: "/", label: "Tournaments", icon: <Trophy /> },
@@ -92,7 +93,7 @@ function GlobalLayout() {
 	return (
 		<>
 			<Nav layout="top" items={items} />
-			<main className="mx-auto max-w-[1200px] px-4 pt-6 pb-8">
+			<main className="mx-auto max-w-[1200px] px-4 pt-4 pb-28 md:pt-6 md:pb-8">
 				<RouterRoutes>
 					<RouterRoute path="/owner" element={<Owner />} />
 					<RouterRoute path="*" element={<Home />} />

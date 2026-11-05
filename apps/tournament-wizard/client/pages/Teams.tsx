@@ -12,6 +12,7 @@ import { useT } from "../lib/useT";
 import { Button } from "../components/Button";
 import { Lock } from "lucide-react";
 import { Link } from "react-router-dom";
+import { get } from "../lib/http";
 
 const columns: ColumnDef<TeamRow, unknown>[] = [
 	{ accessorKey: "name", header: "Team" },
@@ -29,7 +30,7 @@ export default function Teams() {
 	const { data: teams = [], isLoading } = useQuery<TeamRow[]>({
 		queryKey: ["teams", tour.tid],
 		refetchInterval: 20000,
-		queryFn: () => fetch(tour.api("/teams")).then((r) => r.json()),
+		queryFn: () => get(tour.api("/teams")),
 	});
 	const { data: access } = useAccess();
 	const q = query.trim().toLowerCase();
@@ -44,9 +45,9 @@ export default function Teams() {
 					title="Team names are for teams that have paid"
 					description="Pay the entry fee and name your team to see who else is playing."
 					action={
-						access.payment_link ? (
+						access.pay_url ? (
 							<Button variant="primary" asChild>
-								<a href={access.payment_link} target="_blank" rel="noreferrer">
+								<a href={access.pay_url} target="_blank" rel="noreferrer">
 									Pay the entry fee
 								</a>
 							</Button>
@@ -70,6 +71,18 @@ export default function Teams() {
 				data={shown}
 				isLoading={isLoading}
 				getRowHref={(t: TeamRow) => tour.to(`/teams/${t.id}`)}
+				mobileCard={(t: TeamRow) => (
+					<div className="flex items-center gap-3">
+						<span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-subtle text-sm font-bold">{t.code}</span>
+						<div className="min-w-0 flex-1">
+							<p className="truncate font-semibold">{t.name}</p>
+							<p className="text-xs text-secondary">
+								Pool {t.pool} · {t.wins}–{t.losses} · rank {t.pool_rank}
+							</p>
+						</div>
+						<Badge>Seed {t.seed}</Badge>
+					</div>
+				)}
 				emptyState={<EmptyState title="No teams found" description="Try a different search." />}
 			/>
 		</div>

@@ -1,10 +1,13 @@
 import { Hono } from "hono";
-import { neon } from "@neondatabase/serverless";
+import { db } from "../lib/db";
 import { verifyStripeSignature } from "../lib/standings";
 import { feeFigures } from "../lib/fees";
 import { Env, Row, forbidden, ownerOnly } from "../lib/ctx";
 
 const P = "/app-api/t/:tid";
+
+// The tag put on a tournament's payment link, which Stripe hands back with each payment.
+export const stripeRef = (tid: number) => `tw-${tid}`;
 
 // Entries, fees, payment settings, organizers and the Stripe webhook. Only organizers (and the app owner) see the money.
 export function moneyRoutes(app: Hono<Env>) {
@@ -123,7 +126,7 @@ export function moneyRoutes(app: Hono<Env>) {
 	// Stripe calls a tournament's own address when a team pays. The signature, checked with that tournament's secret, proves it came from its Stripe.
 	app.post("/app-api/stripe-webhook/:tid", async (c) => {
 		const tid = Number(c.req.param("tid"));
-		const sql = neon(c.env.DATABASE_URL);
+		const sql = db(c);
 		const [t] = (await sql`SELECT stripe_webhook_secret FROM tournaments WHERE id = ${tid}`) as Row[];
 		if (!t?.stripe_webhook_secret) return c.json({ error: "This tournament has no webhook secret yet" }, 400);
 		const raw = await c.req.text();
@@ -133,6 +136,9 @@ export function moneyRoutes(app: Hono<Env>) {
 		const event = JSON.parse(raw);
 		if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
 			const s = event.data?.object ?? {};
+			// Only payments made through this tournament's link count. Anything else sold on the same Stripe account
+			// (t-shirts, another event) has no tag or a different one, and is ignored.
+			if (s.client_reference_id !== stripeRef(tid)) return c.json({ received: true, ignored: "not a payment for this tournament" });
 			if (s.payment_status === "paid") {
 				const email = String(s.customer_details?.email ?? s.customer_email ?? "").trim().toLowerCase();
 				if (email) {

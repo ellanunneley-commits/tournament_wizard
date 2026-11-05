@@ -1,7 +1,6 @@
-import { neon } from "@neondatabase/serverless";
+import type { Sql } from "./ctx";
 
 type Row = Record<string, any>;
-type Sql = ReturnType<typeof neon>;
 
 // The organizer pays the app owner a flat fee per tournament, plus a share of every team's entry fee.
 export const FLAT_FEE_CENTS = 10000;

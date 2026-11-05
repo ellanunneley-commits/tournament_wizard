@@ -2,22 +2,37 @@
 
 A multi-tournament volleyball app: pool play, a 16-team bracket, live point-by-point scoring, standings, announcements with countdowns, a master schedule with timing, paid team entry through Stripe, and a per-tournament app fee.
 
-This repository is a copy of the app's own code, exported from Glide. It is built to run on Glide (the sign-in, hosting and database are provided there), so it will not run standalone without changes.
+The app started as an export from Glide and now runs on its own: Cloudflare Workers for hosting, Neon (Postgres) for the database and Clerk for email sign-in.
+
+## Run it on your computer
+
+1. Install Node.js (version 22 or newer) and Postgres.
+2. Create a database and load the tables: `createdb tw` then `psql -d tw -f schema.sql`.
+3. Make yourself the app owner: `psql -d tw -c "insert into app_owners (email) values ('you@email.com')"`.
+4. Copy `.env.example` to `.env` and set `DATABASE_URL`.
+5. `npm install`, then `npm run dev`, and open the address it prints.
+
+Without Clerk keys the app uses a test sign-in: type any email to act as that person.
+
+## Put it online
+
+1. Create a Neon database and run `schema.sql` in its SQL editor.
+2. Create a Clerk app with email-code sign-in. Under Sessions > Customize session token, add `{ "email": "{{user.primary_email_address}}" }`.
+3. `npx wrangler login`, then `npx wrangler secret put DATABASE_URL` and `npx wrangler secret put CLERK_SECRET_KEY`.
+4. Put `VITE_CLERK_PUBLISHABLE_KEY` in `.env`, then `npm run deploy`.
 
 ## What is here
 
 - apps/tournament-wizard/server.ts - the API (Hono). Every tournament route lives under /app-api/t/:tid.
+- apps/tournament-wizard/auth.ts - who is signed in (Clerk, or a test sign-in when developing).
 - apps/tournament-wizard/lib - standings, bracket advance, fees, scoring rules, automatic announcements, tournament creation.
 - apps/tournament-wizard/routes - money (entries, fees, Stripe webhook), live scoring, announcements.
 - apps/tournament-wizard/client - the React pages and components (React Router 7, TanStack Query, Tailwind).
 - schema.sql - the database tables.
-- package.json - the extra packages the app needs.
+- package.json - the packages the app needs and the commands to run it.
+- wrangler.jsonc - Cloudflare Workers settings. vite.config.ts - the build, and the local test server.
 
-## Not included
-
-- The standard UI components (Button, Card, DataTable, Dialog and so on) that Glide installs into client/components when the app builds.
-- apps/tournament-wizard/auth.ts - the sign-in helper Glide injects at build time.
-- No keys or secrets. The app reads DATABASE_URL from its environment. Each tournament keeps its own Stripe signing secret in the database (tournaments.stripe_webhook_secret).
+No keys or secrets are kept in the code. Each tournament keeps its own Stripe signing secret in the database (tournaments.stripe_webhook_secret).
 
 ## Roles
 
